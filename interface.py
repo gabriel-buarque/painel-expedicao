@@ -26,7 +26,7 @@ def renderizar_sidebar(mapa_meses):
     # Inicia a construção visual da barra esquerda escura
     with st.sidebar:
         
-        st.image(LOGO_TRANSPARENTE_STR, width=110)
+        st.image("assets/Fundo-transp.png", width=110)
         st.title("Controle de Expedição")
         st.markdown("---")
 
