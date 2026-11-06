@@ -14,9 +14,8 @@ ARQUIVO_LOG = PASTA_LOGS / "app_errors.log"
 CACHE_DADOS = PASTA_DADOS_LOCAIS / "ultimo_df_banco.csv"
 PLANILHA_METAS = PASTA_DADOS_LOCAIS / "Metas.xlsx"
 
-
-LOGO_FUNDO_STR = str(PASTA_ASSETS / "Fundo logo Nassau.png")
-LOGO_TRANSPARENTE_STR = str(PASTA_ASSETS / "Fundo-transp.png")
+LOGO_FUNDO_STR = "assets/Fundo logo Nassau.png"
+LOGO_TRANSPARENTE_STR = "assets/Fundo-transp.png"
 
 def garantir_pastas():
     """Cria as pastas automaticamente se alguém baixar o projeto sem elas"""
