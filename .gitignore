@@ -1,0 +1,9 @@
+
+# Ambientes virtuais e ficheiros temporários do Python
+.venv/
+.venv-1/
+__pycache__/
+*.pyc
+
+# Ignorar o ficheiro de logs que é gerado localmente
+logs/app_errors.log

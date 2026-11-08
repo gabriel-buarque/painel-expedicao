@@ -1,0 +1,9 @@
+﻿altair
+mysql-connector-python
+numpy
+openpyxl
+pandas
+Pillow
+psycopg2-binary
+SQLAlchemy
+streamlit
