@@ -270,16 +270,6 @@ destinatario = "equipe@seudominio.com"
 
 As metas da `Metas.xlsx` também são fictícias (entre 160 mil e 219 mil sacos por unidade/mês).
 
----
-
-## Próximos passos
-
-- [ ] Gerar o backup também no modo demonstração, para dar para testar o modo contingência só com a base fictícia.
-- [ ] Remover `mysql-connector-python` do `requirements.txt` (sobra da versão em MariaDB) e fixar as versões das dependências.
-- [ ] Reaproveitar o CSS e as funções de gráfico entre `main.py` e `clone.py` sem quebrar o isolamento do clone.
-- [ ] Testes automatizados para `normalizar()` e para o cálculo de dias trabalhados.
-
----
 
 <div align="center">
 
