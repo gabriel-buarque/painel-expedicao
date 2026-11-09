@@ -1,239 +1,288 @@
-<div align = "center">
+<div align="center">
 
-# **Sistema Corporativo para Monitoramento de Expedição de Cimento**
+# 🏭 Painel de Expedição de Cimento
 
+**Dashboard em Streamlit para acompanhar a saída de cimento das fábricas, comparar o volume expedido com a meta do mês e mostrar se a operação está à frente ou atrás do ritmo necessário.**
 
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?logo=streamlit&logoColor=white)
+![Pandas](https://img.shields.io/badge/Pandas-150458?logo=pandas&logoColor=white)
+![Altair](https://img.shields.io/badge/Altair-gráficos-E96107)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white)
+![Dados](https://img.shields.io/badge/dados-100%25%20fictícios-17803D)
 
-![Python](https://img.shields.io/badge/Python-3.11-blue?logo=python)
-![Streamlit](https://img.shields.io/badge/Streamlit-1.x-red?logo=streamlit)
-![MariaDB](https://img.shields.io/badge/MariaDB-Database-blue?logo=mariadb)
-![Status](https://img.shields.io/badge/Status-Em%20Produção-success)
-![License](https://img.shields.io/badge/License-Private-lightgrey)
 </div>
-<br>
-<br>
 
-##  ***Objetivos do Projeto***
-### O principal objetivo deste sistema é fornecer uma solução robusta e centralizada para o **acompanhamento em tempo real do processo de expedição** das unidades fabris (Itabira, Itapetinga e Itapicuru). 
-
-### A plataforma foi desenvolvida para apoiar a tomada de decisão logística e comercial através dos seguintes pilares:
-
-### **Monitoramento em Tempo Real:** Visualização instantânea do fluxo de expedição, permitindo a verificação em tempo real das filas de atendimento e do status de carregamento dos veículos.
-### **Análise de Volume de Saídas:** Rastreamento preciso do volume físico (em sacos convertidos) e financeiro faturado, distribuído e detalhado por **tipo de cimento** (ex: CP II, CP III).
-### **Segmentação de Clientes:** Inteligência de dados configurada para identificar o comportamento de saídas e performance de vendas de acordo com o **segmento de clientes** atendidos pela corporação.
-### **Previsibilidade e Ritmo de Metas:** Confronto matemático diário entre o volume real faturado e as metas comerciais estipuladas para o período, indicando o desvio (atraso/adiantamento) e a média diária necessária para atingimento dos resultados.
-### **Contingência Operacional (Modo Offline):** Garantia de disponibilidade contínua através de um sistema de sincronização e cache local, permitindo que a equipe consulte os relatórios e históricos mesmo em cenários de instabilidade no banco de dados principal.
+> [!IMPORTANT]
+> **Este repositório usa apenas dados fictícios.** O painel foi desenvolvido para uso interno em uma indústria cimenteira, e a versão publicada aqui roda em **modo demonstração**: lê uma base inventada (`dados_locais/dados_expedicao_ficticios.csv`) em vez do banco da empresa. Clientes, placas, notas fiscais, volumes e metas não correspondem a nenhuma informação real. Nenhuma credencial está no código — o acesso ao banco e ao SMTP vem de `st.secrets`, que fica fora do Git.
 
 <br>
-<br>
-<br>
 
-# **1.  Visão Geral do Sistema**
+![Visão geral do painel](docs/painel-geral.png)
 
-### O Painel de Expedição Nassau é uma aplicação corporativa de alta performance desenvolvida sobre o ecossistema Python e a biblioteca Streamlit. O propósito central do sistema é monitorar, consolidar e auditar em tempo real o fluxo físico e financeiro de saída de cimento das unidades operacionais estratégicas (Itabira, Itapetinga, Itapicuru e Cibrasa).
-### Como a expedição industrial funciona de forma ininterrupta, o sistema foi projetado para ser totalmente tolerante a falhas. Ele utiliza um modelo de contingência dinâmica ('Principal' e 'Clone') que, em caso de queda, recorre a um backup local em cache para manter a operação visível, enviando simultaneamente alertas de erro em background via e-mail seguro (SMTP).
-<br>
-<br>
-<br>
-<br>
+## Sumário
 
+- [O que o painel mostra](#o-que-o-painel-mostra)
+- [Como rodar](#como-rodar)
+- [Arquitetura](#arquitetura)
+- [Regras de negócio](#regras-de-negócio)
+- [Alta disponibilidade (modo contingência)](#alta-disponibilidade-modo-contingência)
+- [Alertas e logs](#alertas-e-logs)
+- [Planilhas de apoio](#planilhas-de-apoio)
+- [Configuração para produção](#configuração-para-produção)
+- [A base fictícia](#a-base-fictícia)
+- [Próximos passos](#próximos-passos)
 
-# **2.  Arquitetura Modular e Estrutura de Arquivos**
-<br>
+---
 
-### Para garantir a manutenibilidade, isolamento de escopo e clareza de desenvolvimento, o código fonte foi distribuído em módulos especializados. A tabela abaixo detalha a matriz de responsabilidade de cada componente:
-<br>
-<br>
+## O que o painel mostra
 
-| Componente | Função Estrutural | Responsabilidades Principais |
-| :--- | :--- | :--- |
-| `clone.py` | Ponto de Entrada (Produção) | Atua como interceptador global de erros. Tenta executar o fluxo principal e, em caso de falha fatal de infraestrutura, renderiza instantaneamente o ambiente de contingência isolado. |
-| `main.py` | Ponto de Entrada (Desenvolvimento) | Gerencia o fluxo de execução principal do painel operacional, orquestrando a lógica de negócio, processamento temporal de competências e montagem de dashboards dinâmicos. |
-| `dados.py` | Camada de Persistência e Dados | Centraliza as consultas SQL à base MariaDB, conexões físicas, leitura e normalização de planilhas comerciais (Excel), além da gestão de backups frios em formato CSV. |
-| `interface.py` | Camada de Apresentação (UI) | Garante o isolamento dos componentes visuais. Constrói menus laterais interativos, barras de progresso comercial e renderiza os gráficos de progressão diária acumulada. |
-| `alertas.py` | Subsistema de Telemetria e Logs | Controla a escrita de logs físicos do sistema (app_errors.log) e gerencia a formatação e despacho de alertas SMTP criptografados para a equipe de engenharia. |
+O painel tem uma tela **consolidada** (todas as unidades somadas) e uma tela para cada fábrica — **Itabira, Itapetinga, Itapicuru e Cibrasa**. Na barra lateral o usuário escolhe os meses de competência (o mês atual vem marcado) e a unidade.
 
+**Indicadores (cards)**
 
-<br>
-<br>
-<br>
-<br>
-<br>
-
-# **3. O Mecanismo de Contingência de Alta Disponibilidade**
-
-### A estabilidade contínua do painel é garantida pelo arquivo `clone.py`, que utiliza a biblioteca nativa runpy para orquestrar a execução segura do sistema. Esse mecanismo blinda a aplicação, garantindo que o usuário não sofra interrupções visuais ou operacionais em caso de oscilações de rede, falhas de banco de dados ou indisponibilidade de APIs.
-<br>
-
-## Fluxo de Interceptação de Erros (Passo a Passo) 
-### 1- O servidor Streamlit inicializa a execução pelo arquivo mestre de produção: `clone.py`.
-
-
-### 2- O bloco try invoca o script de processamento em tempo real: `runpy.run_path("main.py", run_name="_main_")`.
-
-
-### 3- Se a infraestrutura de rede e os servidores estiverem normais, o painel roda sob o arquivo original carregando os dados do banco de dados relacional.
-
-
-### 4- Caso ocorra qualquer exceção fatal (ex: queda de conexão de rede ou falha de handshake SQL), o bloco except intercepta a quebra, dispara a telemetria e limpa o buffer visual do usuário com o método `st.empty()`.
-
-
-### 5- O ambiente entra automaticamente em Modo Clone Isolado, mantendo as exibições visuais estáveis, porém alimentado pelo último arquivo de cache válido (`ultimo_df_banco.csv`).
-
-#### OBS: O modo clone roda de forma autônoma e autocontida. Ele não importa os módulos `dados.py` ou `interface.py` externos para mitigar qualquer risco de efeito cascata originado por arquivos de código corrompidos.
-<br>
-<br>
-<br>
-<br>
-
-
-# **4. Camada de Dados, Regras de Negócio e Gestão de Cache**
-
-### O módulo de dados realiza um tratamento analítico refinado das saídas de expedição. Um dos pilares é a aplicação automática das Regras Comerciais de Conversão de Peso, visto que o cimento faturado em sacos fora do padrão industrial precisa ser normalizado para a unidade padrão de 50 kg para fins de contabilização e acompanhamento fiel de metas:
-<br>
-
-
-```python
-# Expressão matemática de normalização aplicada via Numpy
-df_maria["Quantidade (Sacos)"] = np.where(
-    df_maria["Item"].str.contains("42,5|42.5"),
-    df_maria["Quantidade_Bruta"] * 0.85, # Proporção (42.5kg / 50kg)
-    np.where(
-        df_maria["Item"].str.contains("40"),
-        df_maria["Quantidade_Bruta"] * 0.80, # Proporção (40kg / 50kg)
-        df_maria["Quantidade_Bruta"] # Peso já padrão de 50kg
-    )
-)
-```
-
-
-## Estratégia Avançada de Otimização de Performance
-### Para evitar gargalos de performance e requisições excessivas que degradem a infraestrutura do banco de dados corporativo, o sistema distribui o ciclo de vida da informação através de duas diretrizes de cache tático:
-
-### `st.cache_resource` (TTL Infinito): Aplicado à função conectar_mariadb(). Garante que o pool de conexão de rede seja estabelecido uma única vez e reaproveitado por todas as sessões e atualizações de página de usuários ativos.
-
-### `st.cache_data` (TTL Controlado): Aplicado à planilha comercial de metas (TTL de 10 minutos / 600 segundos) e às volumetrias brutas de notas fiscais emitidas (TTL de 5 minutos / 300 segundos).
-<br>
-<br>
-
-## Customização do Feedback Visual (Spinners Informativos)
-
-### Para elevar o nível de experiência do usuário (UX), a documentação normatiza o uso do parâmetro show_spinner em todas as chamadas de processamento em background. Isso substitui mensagens puras em código por instruções claras em português:
-```python
-@st.cache_data(ttl=300, show_spinner="Baixando e processando notas fiscais. Isso pode levar alguns segundos...")
-def carregar_dados_sistema():
-    # Bloco lógico de extração da query SQL ...
-```
-<br>
-<br>
-<br>
-<br>
-
-
-# **5. Subsistema de Telemetria e Alertas Automatizados**
-### O tratamento de falhas opera de forma modular e inteligente. O arquivo alertas.py atua em conjunto com as variáveis de ambiente protegidas em `st.secrets` para garantir o isolamento entre os ciclos de teste e a operação real de produção.
-
-### A função de notificação avalia a chave `st.secrets["ambiente"]["modo"]`. Se o app estiver em modo de desenvolvimento local, nenhuma notificação por e-mail é disparada, evitando o congestionamento da caixa de entrada da equipe de manutenção. O erro é detalhado no console do terminal de depuração e um pop-up temporário e discreto é gerado no canto da tela através do comando `st.toast()`.
-
-### Em modo de produção, o sistema conecta-se ao servidor SMTP via protocolo seguro SSL (porta padrão 465) e encapsula o rastro de pilha completo do erro (gerado por `traceback.format_exception`) no corpo de uma mensagem estruturada via EmailMessage, garantindo respostas rápidas de manutenção.
-<br>
-<br>
-<br>
-<br>
-
-# **6. Guia Prático de Implantação e Deploy**
-### Para o correto funcionamento do ambiente resiliente, a infraestrutura deve seguir rigorosamente as rotinas de inicialização documentadas abaixo:
-
-| Ambiente de Execução | Comando de Inicialização | Comportamento Esperado |
-| :--- | :--- | :--- |
-| *Desenvolvimento Local* | `streamlit run main.py` | Dispara o painel em modo transparente. Falhas críticas gerarão a tela vermelha nativa do Streamlit, expondo linhas e variáveis exatas para correção rápida. |
-| *Produção Corporativa* | `streamlit run clone.py` | Ativa a malha de resiliência. O usuário final nunca visualizará mensagens de erro. Em caso de quedas de BD, o painel exibirá os dados offline do backup estável. |
-
-<br>
-<br>
-<br>
-<br>
-
-# **7. Gerenciamento de Estado e Persistência Visual**
-### Para evitar que o painel "esqueça" as escolhas do usuário a cada recarregamento de página (comportamento padrão do Streamlit), o módulo `interface.py` utiliza o dicionário global `st.session_state`.
-
-### Regras de Estado Implementadas:
-
-### Memória de Página: A variável  `st.session_state.pagina_atual`  garante que, ao clicar em "Painel Geral" ou em uma fábrica específica ("ITABIRA", "ITAPETINGA", etc.), o painel preserve a aba ativa mesmo após as atualizações de banco de dados (que ocorrem a cada 5 minutos).
-
-### Controle de Meses (Checkbox): O estado de cada mês (ex: `st.session_state["mes_6"]`) é salvo individualmente. O sistema possui uma trava de segurança que impede a tela de "quebrar" caso o usuário desmarque todos os meses: se a lista ficar vazia, o sistema força o mês de Junho (6) como padrão para manter o aplicativo funcional.
-
-### Master Checkbox: O botão "Selecionar Todos os Meses" aplica um broadcast de estado verdadeiro/falso para todos os meses simultaneamente via função de callback (`on_change=alterar_todos_meses`).
-<br>
-<br>
-<br>
-<br>
-
-
-# **8. Resiliência de Caminhos de Arquivos Locais (Pathlib)**
-### O sistema lida com leitura e escrita de arquivos físicos (como o app_errors.log, o backup `ultimo_df_banco.csv` e a planilha Metas.xlsx). Para evitar falhas de caminho (o famoso erro File Not Found) ao rodar a aplicação em diferentes servidores ou pastas, o código utiliza a biblioteca pathlib.
-
-## Estratégia de Busca (Fallback de Diretório):
-### Os arquivos `dados.py` e `clone.py` procuram pelos arquivos locais em duas camadas:
-
-### Primeiro procuram na mesma pasta do script em execução `(Path(__file__).resolve().parent)`.
-
-### Se não encontrarem, recuam e procuram na pasta raiz do projeto `(Path(...).parent.parent)`.
-### Isso garante que o sistema de contingência funcione mesmo que o arquivo `clone.py` seja executado a partir de um subdiretório.
-<br>
-<br>
-<br>
-<br>
-
-# **9. Fluxo de Atualização Operacional (O Arquivo de Metas)**
-
-### Formatação Obrigatória: As colunas devem se chamar rigorosamente "Unidade", "Mês", "Vendas" e "Dias".
-
-### Regra de Nomenclatura: As abas e os nomes das fábricas não devem conter caracteres especiais que diferem do padrão (ex: usar "ITABIRA" em vez de "Fábrica Itabira").
-
-### Tempo de Propagação: Devido ao comando `@st.cache_data(ttl=600)`, o usuário deve ser instruído de que novas metas inseridas no Excel podem levar até 10 minutos para refletirem no painel web.
-<br>
-<br>
-<br>
-<br>
-
-
-# **10. O Schema Anti-Falhas e Isolamento do Clone (SPOF)**
-### O arquivo `clone.py` atua como o "Bote Salva-Vidas" da aplicação e possui um schema de log totalmente autossuficiente (`_configurar_log_clone`)
-
-### *Desacoplamento de Emergência*: O clone não importa o arquivo `alertas.py`. Se o sistema cair por causa de um erro de sintaxe justamente no módulo de alertas, o clone sobreviverá porque possui seu próprio motor de registro.
-
-### *Garantia de Rastreabilidade*: A primeira ação do bloco de exceção é gravar o rastro da falha no disco físico (`app_errors.log`). O aviso por e-mail é secundário. Isso garante que a prova do erro sempre ficará salva no servidor, mesmo se a rede de internet cair no momento do crash.
-<br>
-<br>
-<br>
-<br>
-
-# **11. Zonas Críticas e Invioláveis**
-### O sistema possui pilares lógicos que garantem a contingência. A alteração indevida dos blocos abaixo comprometerá a estabilidade da aplicação:
-
-### **O Comando `st.empty()`**: Localizado no bloco de exceção do `clone.py`. Nunca deve ser removido. Ele funciona como um "apagador", limpando a interface corrompida do `main.py` antes de desenhar o painel de contingência offline.
-
-### **Cache de Banco de Dados**: A função `conectar_mariadb()` utiliza obrigatoriamente `@st.cache_resource`. Alterar para `cache_data` fará o sistema tentar clonar a conexão TCP/IP para cada usuário, esgotando o limite do MariaDB rapidamente .
-
-### **Fallback de Meses Vazios**: Na barra lateral (`interface.py`), existe uma trava que força a seleção do mês "6" (Junho) caso o usuário desmarque todos os botões. Isso impede o Pandas de gerar erros matemáticos de divisão por zero.
-<br>
-<br>
-<br>
-<br>
-
-
-# **12. Dependências e Configuração de Ambiente (Secrets)**
-### Para que qualquer pessoa consiga realizar o deploy da aplicação do zero, é necessário garantir que as bibliotecas corretas estejam instaladas.
-
-### Bibliotecas Python Exigidas (requirements.txt):
-| Biblioteca | Propósito no Sistema |
+| Card | O que significa |
 | :--- | :--- |
-| `streamlit` | Framework principal de renderização web e interface. |
-|`pandas` | Manipulação e limpeza de dados (DataFrames). |
-| `numpy` | Motor de cálculo temporal (dias úteis) e condicional (Run Rate). |
-| `mysql-connector-python` | Driver puro para MariaDB (contorna a lentidão do SQLAlchemy). |
-| `openpyxl` | Motor de leitura do arquivo de metas comercial (.xlsx). |
+| **Meta consolidada** | Soma das metas, em sacos de 50 kg, dos meses selecionados, com o total de dias úteis do período. |
+| **Expedido** | Volume que já saiu, em sacos de 50 kg, e o percentual da meta. |
+| **Ritmo esperado** | Quanto já deveria ter saído até hoje para fechar a meta no prazo, e quantos sacos a operação está à frente ou atrás desse ritmo. |
+| **Falta expedir** | Meta menos o expedido. |
+| **Média diária necessária** | O que falta dividido pelos dias úteis restantes. |
 
+Logo abaixo, uma **barra de progresso da meta** com degradê (vermelho → amarelo → verde) e um marcador mostrando onde o volume deveria estar hoje.
 
+**Gráficos (Altair)**
 
+- **Meta vs Realizado** — linhas mês a mês, com filtro por unidade e por período (só na tela consolidada).
+- **Resumo de evolução física** — barras mensais com o traço da meta e a diferença em sacos (+ acima / − abaixo) nos meses fechados; o mês corrente aparece como parcial.
+- **Top 5 clientes** — ranking por volume, com a participação de cada um no período.
+
+**Tabela detalhada** com filtros por período, cliente, produto e placa, e botão para **baixar o recorte em CSV**.
+
+<p align="center">
+  <img src="docs/graficos.png" alt="Gráficos de evolução e top clientes" width="100%">
+</p>
+
+---
+
+## Como rodar
+
+```bash
+git clone https://github.com/gabriel-buarque/painel-expedicao.git
+cd painel-expedicao
+
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+streamlit run main.py
+```
+
+O painel abre em `http://localhost:8501` já com a base fictícia, sem precisar de banco de dados nem de `secrets.toml`.
+
+| Comando | Quando usar | Comportamento |
+| :--- | :--- | :--- |
+| `streamlit run main.py` | Desenvolvimento | Roda o painel direto. Um erro aparece na tela, com o traceback do Streamlit. |
+| `streamlit run clone.py` | Produção | Roda o mesmo painel protegido pelo modo contingência: se algo falhar, o usuário vê os dados do último backup em vez de uma tela de erro. |
+
+---
+
+## Arquitetura
+
+```
+painel-expedicao/
+├── main.py              # Painel principal: KPIs, barra da meta, gráficos e tabela
+├── clone.py             # Ponto de entrada de produção + painel de contingência autossuficiente
+├── dados.py             # Consulta ao PostgreSQL, normalização, backup em CSV e leitura das metas
+├── graficos.py          # Os três gráficos em Altair
+├── interface.py         # Barra lateral: meses, unidades e botão "Atualizar dados"
+├── alertas.py           # Log em arquivo e alerta por e-mail (SMTP SSL)
+├── caminhos.py          # Caminhos do projeto com pathlib (cria as pastas se faltarem)
+├── .streamlit/
+│   └── config.toml      # Tema (laranja #E96107, fundo claro)
+├── assets/              # Logos usados no cabeçalho e na barra lateral
+└── dados_locais/
+    ├── dados_expedicao_ficticios.csv   # Base fictícia (12.000 notas)
+    └── Metas.xlsx                      # Metas fictícias por unidade e mês
+```
+
+```mermaid
+flowchart LR
+    A[(PostgreSQL<br/>notas fiscais)] -->|SQLAlchemy| B[dados.py<br/>normalizar]
+    F[CSV fictício<br/>modo demonstração] --> B
+    B --> C[main.py<br/>KPIs, gráficos e tabela]
+    B -->|a cada carga boa| D[(ultimo_postgres.csv<br/>backup local)]
+    M[Metas.xlsx<br/>Feriados.xlsx] --> C
+    E[clone.py] -->|runpy| C
+    E -.->|se main.py falhar| G[Painel de contingência]
+    D --> G
+```
+
+### Fonte de dados
+
+Em `dados.py`, a chave `MODO_TESTE = True` faz o painel ler o CSV fictício. Com `MODO_TESTE = False`, ele consulta o PostgreSQL (SQLAlchemy + psycopg2, com `pool_pre_ping` e reciclagem da conexão a cada 30 min).
+
+A consulta já traz só o que conta como expedição:
+
+- famílias de cimento **CP I a CP V**;
+- notas com status **"Uso autorizado"** e sem data de cancelamento;
+- sem devolução registrada;
+- excluindo CFOPs de transferência, remessa, retorno e devolução;
+- notas fiscais complementares entram com quantidade zero, para não contar o mesmo volume duas vezes;
+- emitidas a partir de 01/01/2026.
+
+O código da empresa vindo do ERP (1, 3, 4, 5) é traduzido para o nome da fábrica.
+
+### Cache
+
+| Função | Tipo | Validade |
+| :--- | :--- | :--- |
+| `conectar_postgres()` | `st.cache_resource` | Toda a vida do servidor (uma conexão compartilhada) |
+| `carregar_fonte()` / `carregar_dados_sistema()` | `st.cache_data` | 10 min |
+| `carregar_planilha_metas()` / `carregar_feriados()` | `st.cache_data` | 1 h |
+
+O botão **Atualizar dados** limpa só o `cache_data` — a conexão com o banco continua aberta — e volta os filtros ao padrão.
+
+---
+
+## Regras de negócio
+
+### Normalização (`dados.py → normalizar`)
+
+Toda fonte passa pelo mesmo funil e sai com as mesmas 8 colunas: `Fábrica`, `Data`, `Cliente`, `Placa`, `Quantidade (Sacos)`, `Item`, `Mês_Num`, `Dia_Mes`.
+
+- Textos em caixa alta e sem espaços nas pontas.
+- Quantidades em texto são convertidas com cuidado: só é tratado como formato brasileiro (`1.234,50`) quando existe vírgula; sem vírgula, o ponto é decimal — evita transformar `1250.5` em `12505`.
+- Linhas sem data válida são descartadas.
+- Se faltar alguma coluna, o erro aparece na carga, e não depois como um KPI errado.
+- **Anti-duplicidade:** a mesma nota (fonte + fábrica + número) entra uma única vez.
+
+### Dias úteis e ritmo
+
+O cálculo de dias trabalhados replica a medida DAX que a empresa já usava no Power BI:
+
+- segunda a sexta valem **1 dia**, sábado vale **0,5** e domingo **0**;
+- no mês atual, conta do dia 1º até **ontem**, descontando os feriados da `Feriados.xlsx`;
+- meses passados usam os dias úteis da planilha de metas; meses futuros contam 0.
+
+Com isso:
+
+```
+ritmo esperado          = meta × (dias já trabalhados ÷ dias úteis do período)
+diferença para o ritmo  = expedido − ritmo esperado
+média diária necessária = (meta − expedido) ÷ dias úteis restantes
+```
+
+---
+
+## Alta disponibilidade (modo contingência)
+
+Em produção o servidor roda `clone.py`, que executa o `main.py` com `runpy` dentro de um `try`:
+
+1. **Caminho normal:** o `main.py` roda e carrega os dados do banco. A cada carga bem-sucedida o `dados.py` salva um backup em `dados_locais/ultimo_postgres.csv` (grava num `.tmp` e substitui, para nunca deixar um arquivo pela metade). Uma consulta que volta vazia não sobrescreve o backup bom.
+2. **Se uma fonte cair**, o próprio `dados.py` usa o backup daquela fonte e o painel segue normalmente.
+3. **Se o `main.py` inteiro quebrar**, o `clone.py` registra o erro, envia o alerta e marca a sessão como em contingência por **10 minutos**. Nesse período o usuário vê o **painel de contingência**: a mesma tela, os mesmos KPIs e gráficos, alimentados pelo último backup.
+4. Depois dos 10 minutos — ou ao clicar em **Atualizar dados** — o painel tenta o `main.py` de novo.
+
+Detalhes que fazem isso funcionar:
+
+- O clone é **autossuficiente**: não importa `dados.py`, `interface.py`, `graficos.py` nem `alertas.py` (só `caminhos.py`). Se um desses arquivos tiver um erro, o clone continua de pé. Ele tem o próprio log e o próprio envio de e-mail.
+- `st.stop()` e `st.rerun()` funcionam lançando exceções internas do Streamlit. O clone reconhece essas exceções e as deixa passar — sem isso, desmarcar todos os meses ou clicar em "Atualizar" colocaria o painel em contingência sem nenhuma falha real.
+
+---
+
+## Alertas e logs
+
+`alertas.py → notificar_admin(titulo, erro)`:
+
+- grava sempre o traceback em `logs/app_errors.log`;
+- em **desenvolvimento**, imprime no terminal e para por aí;
+- em **produção** (`ambiente.modo = "producao"` nos secrets), envia um e-mail via **SMTP SSL** (porta 465 por padrão, timeout de 15 s);
+- **anti-inundação:** o mesmo alerta é enviado no máximo uma vez a cada 15 minutos — banco fora do ar não vira um e-mail por clique de cada usuário.
+
+Os alertas nunca usam `st.toast`, porque são chamados de dentro de funções com `@st.cache_data` e o Streamlit quebraria ao reproduzir o cache.
+
+---
+
+## Planilhas de apoio
+
+### `dados_locais/Metas.xlsx` (obrigatória)
+
+| Coluna | Uso |
+| :--- | :--- |
+| `Unidade` | Nome da fábrica, igual ao usado no painel (ex.: `ITABIRA`) |
+| `Mês` | Número do mês (1 a 12) |
+| `Vendas` | Meta do mês em sacos de 50 kg |
+| `Dias` | Dias úteis do mês (se a coluna não existir, usa 22) |
+
+As colunas `Ano`, `Ano-Mês` e `CodCorporacao` podem existir, mas não são lidas. Se a planilha faltar, o painel funciona com metas zeradas e mostra um aviso. Alterações levam até 1 hora para aparecer (ou na hora, clicando em **Atualizar dados**).
+
+### `dados_locais/Feriados.xlsx` (opcional)
+
+| Coluna | Uso |
+| :--- | :--- |
+| `Corporação` | Fábrica do feriado |
+| `DATA FERIADO` | Data (dia/mês/ano) |
+| `FERIADO` | Quanto descontar dos dias trabalhados (ex.: 1 ou 0,5) |
+
+Sem essa planilha, o cálculo considera que não há feriados.
+
+---
+
+## Configuração para produção
+
+1. Em `dados.py`, troque para `MODO_TESTE = False`.
+2. Crie `.streamlit/secrets.toml` (não versionar):
+
+```toml
+[ambiente]
+modo = "producao"          # qualquer outro valor = desenvolvimento (sem e-mail)
+
+[postgres]
+host = "..."
+port = 5432
+database = "..."
+user = "..."
+password = "..."
+
+[alertas]
+smtp_host = "smtp.seudominio.com"
+smtp_port = 465
+smtp_user = "..."
+smtp_password = "..."
+remetente = "painel@seudominio.com"
+destinatario = "equipe@seudominio.com"
+```
+
+3. Suba com `streamlit run clone.py`.
+
+---
+
+## A base fictícia
+
+`dados_locais/dados_expedicao_ficticios.csv` foi gerada só para este repositório:
+
+- **12.000** notas fiscais de janeiro a dezembro de 2026;
+- 4 fábricas, com volumes distribuídos de forma parecida entre elas;
+- **130 clientes** com nomes genéricos (`CLIENTE 8`, `CONSTRUTORA 34`, `DEPÓSITO 12`…);
+- placas, números de nota (`NF-000001`…) e quantidades (250 a 1.499 sacos por carga) aleatórios;
+- tipos de cimento CP I a CP V.
+
+As metas da `Metas.xlsx` também são fictícias (entre 160 mil e 219 mil sacos por unidade/mês).
+
+---
+
+## Próximos passos
+
+- [ ] Gerar o backup também no modo demonstração, para dar para testar o modo contingência só com a base fictícia.
+- [ ] Remover `mysql-connector-python` do `requirements.txt` (sobra da versão em MariaDB) e fixar as versões das dependências.
+- [ ] Reaproveitar o CSS e as funções de gráfico entre `main.py` e `clone.py` sem quebrar o isolamento do clone.
+- [ ] Testes automatizados para `normalizar()` e para o cálculo de dias trabalhados.
+
+---
+
+<div align="center">
+
+Desenvolvido por **[Gabriel Buarque](https://github.com/gabriel-buarque)**
+
+</div>
