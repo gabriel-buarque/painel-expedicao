@@ -735,7 +735,7 @@ def executar_app():
 
     with col_l:
         from PIL import Image
-        st.image(Image.open("assets/Fundo logo Nassau.png"), width=170)
+        st.image(Image.open("assets/Fundo-transp.png"), width=170)
 
     st.markdown("---")
     secao(
